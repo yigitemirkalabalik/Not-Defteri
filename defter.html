@@ -850,6 +850,26 @@
   .chat-msg.pending{align-self:flex-start;color:var(--text-faint);font-style:italic;background:transparent;border:none;padding:0 4px;}
   .chat-empty{margin:auto;text-align:center;color:var(--text-faint);font-size:12.5px;padding:0 24px;}
 
+  .chat-action-card{
+    align-self:stretch;background:var(--surface-2);border:1px solid var(--accent);
+    border-radius:var(--radius);padding:12px 13px;
+    animation:modalIn var(--dur-fast) var(--ease-spring) both;
+  }
+  .chat-action-label{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:6px;
+  }
+  .chat-action-desc{
+    font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;word-break:break-word;
+  }
+  .chat-action-buttons{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;}
+  .chat-action-card.resolved{border-color:var(--border-soft);}
+  .chat-action-card.resolved .chat-action-desc{color:var(--text-dim);}
+  .chat-action-result{
+    margin-top:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint);
+    padding-top:8px;border-top:1px solid var(--border-soft);
+  }
+
   .chat-setup{padding:20px;overflow-y:auto;}
   .chat-avatar-lg{
     width:56px;height:56px;border-radius:15px;margin:0 auto 14px;
@@ -3470,6 +3490,48 @@
   dropzone.addEventListener('drop', (e)=>{
     if(e.dataTransfer && e.dataTransfer.files){
       addFiles(e.dataTransfer.files, currentProjectId);
+    }
+  });
+
+  /* ---------------- smart clipboard paste: detects file vs text ---------------- */
+  document.addEventListener('paste', (e)=>{
+    if(!projectView.classList.contains('active') || !currentProjectId) return;
+    if(modalRoot.innerHTML) return;                          // a modal is open — let it handle its own paste
+    if(chatOverlay.classList.contains('open')) return;        // AI chat panel open — don't interfere
+    if(previewOverlay.classList.contains('open')) return;     // file preview open — don't interfere
+
+    const items = e.clipboardData && e.clipboardData.items;
+    if(!items) return;
+
+    const files = [];
+    for(let i=0;i<items.length;i++){
+      if(items[i].kind === 'file'){
+        const f = items[i].getAsFile();
+        if(f) files.push(f);
+      }
+    }
+
+    if(files.length > 0){
+      // clipboard holds a real file (copied from Windows Explorer, a screenshot, a copied image, etc.)
+      e.preventDefault();
+      addFiles(files, currentProjectId);
+      showToast(files.length > 1 ? `${files.length} dosya panodan eklendi` : 'Dosya panodan eklendi');
+      return;
+    }
+
+    // no file on the clipboard — if the user isn't already typing somewhere specific,
+    // route the plain text straight into the note. If they ARE focused in a text field
+    // (including the note itself), let the browser's native paste happen at the cursor.
+    const active = document.activeElement;
+    const isTypingElsewhere = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+    if(!isTypingElsewhere){
+      const text = e.clipboardData.getData('text/plain');
+      if(text){
+        e.preventDefault();
+        noteTextarea.value = (noteTextarea.value ? noteTextarea.value + (noteTextarea.value.endsWith('\n') ? '' : '\n') : '') + text;
+        noteTextarea.dispatchEvent(new Event('input'));
+        showToast('Metin nota eklendi');
+      }
     }
   });
 
