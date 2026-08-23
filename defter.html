@@ -300,6 +300,44 @@
     -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
   }
   .card.removing-card{opacity:0;transform:scale(.94);pointer-events:none;}
+  .category-folder-card{background:
+      radial-gradient(160px 100px at 0% 0%, color-mix(in srgb, var(--tag-color, var(--accent)) 20%, transparent), transparent 72%),
+      var(--surface);
+    border-color:color-mix(in srgb, var(--tag-color, var(--accent)) 30%, var(--border));
+  }
+  .category-add-card{
+    border-style:dashed;
+    align-items:center;
+    justify-content:center;
+    background:transparent;
+    box-shadow:none;
+  }
+  .category-add-card:hover{border-color:var(--accent);}
+  .limit-status-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+    padding:8px 24px;
+    background:var(--surface-2);
+    border-bottom:1px solid var(--border);
+    font-size:12.5px;
+  }
+  .limit-status-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:4px 10px;
+    border-radius:999px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    cursor:pointer;
+    color:var(--text-dim);
+    white-space:nowrap;
+  }
+  .limit-status-chip:hover{border-color:var(--accent);color:var(--text);}
+  .limit-status-chip .lsc-dot{width:7px;height:7px;border-radius:50%;background:var(--warn, #e0a83d);flex-shrink:0;}
+  .limit-status-chip.lsc-soon .lsc-dot{background:var(--danger);}
   .card:hover{
     transform:translateY(-3px);
     border-color:color-mix(in srgb, var(--tag-color, var(--accent)) 38%, var(--border));
@@ -681,6 +719,13 @@
     box-shadow:var(--shadow-lg);
     animation:modalIn var(--dur-slow) var(--ease-spring) both;
     transition:opacity var(--dur-fast) var(--ease-in), transform var(--dur-fast) var(--ease-in);
+    max-height:calc(100vh - 40px);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  @media (max-width:640px){
+    .modal-overlay{padding:10px;align-items:flex-end;}
+    .modal{max-height:calc(100vh - 20px);border-radius:var(--radius-lg) var(--radius-lg) 0 0;}
   }
   .modal-overlay.closing .modal{opacity:0;transform:translateY(6px) scale(.97);}
   .modal.modal-wide{max-width:440px;}
@@ -963,6 +1008,7 @@
       <span class="sync-status" id="sync-status"></span>
       <button class="btn btn-ghost btn-sm" id="appearance-btn" title="Görünüm ayarları"><span data-icon="settings"></span><span class="btn-label">Görünüm</span></button>
       <button class="btn btn-ghost btn-sm" id="ai-chat-btn" title="AI Asistan"><span data-icon="sparkles"></span><span class="btn-label">AI Sohbet</span></button>
+      <button class="btn btn-ghost btn-sm" id="limit-btn" title="Claude limit takibi (bu cihazda saklanır, GitHub'a senkron edilmez)"><span data-icon="alarm"></span><span class="btn-label">Limit</span></button>
       <button class="btn btn-ghost btn-sm" id="github-btn" title="GitHub senkronizasyonu"><span data-icon="sync"></span><span class="btn-label">GitHub</span></button>
       <button class="btn btn-ghost btn-sm" id="export-btn" title="Tüm verileri yedek dosyası olarak indir"><span data-icon="download"></span><span class="btn-label">Yedekle</span></button>
       <button class="btn btn-ghost btn-sm" id="import-btn" title="Yedek dosyasından geri yükle"><span data-icon="upload"></span><span class="btn-label">İçe aktar</span></button>
@@ -971,6 +1017,8 @@
     </div>
   </header>
 
+  <div class="limit-status-bar" id="limit-status-bar" style="display:none;"></div>
+
   <main id="home-view">
     <div class="section-tabs" id="section-tabs">
       <button class="section-tab active" id="tab-project" data-kind="project"><span data-icon="folder" data-icon-size="15"></span> Projeler</button>
@@ -978,6 +1026,7 @@
       <button class="section-tab" id="tab-library" data-kind="library"><span data-icon="star" data-icon-size="15"></span> Kitaplık</button>
       <span class="sort-mode-hint" id="sort-mode-hint" style="display:none;"><span data-icon="star" data-icon-size="12"></span> Önem derecesine göre sıralı</span>
     </div>
+    <div class="category-row" id="category-row" style="display:none;gap:8px;flex-wrap:wrap;margin:-6px 0 16px;"></div>
     <div class="grid" id="project-grid"></div>
     <div class="empty-state" id="empty-state" style="display:none;">
       <div class="es-icon" id="empty-state-icon" data-icon="book" data-icon-size="24"></div>
@@ -1161,6 +1210,7 @@
     robot: '<rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.3"/><circle cx="15" cy="14" r="1.3"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1"/><path d="M4 13H2M22 13h-2"/>',
     bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
     alarm: '<circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14.5 14.5"/><path d="M5 3 2 6"/><path d="M22 6l-3-3"/><path d="M6.5 21l-1.5 1.5"/><path d="M18.5 21l1.5 1.5"/>',
+    tag: '<path d="M20.59 13.41L11 3.83A2 2 0 0 0 9.59 3.17H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .59 1.41l9.58 9.58a2 2 0 0 0 2.83 0l4.59-4.59a2 2 0 0 0 0-2.83z"/><circle cx="7.5" cy="7.5" r="1.3"/>',
   };
   function icon(name, size){
     const s = size || 16;
@@ -1233,7 +1283,7 @@
 
   /* ---------------- IndexedDB layer ---------------- */
   const DB_NAME = 'defterDB';
-  const DB_VERSION = 4;
+  const DB_VERSION = 5;
   let dbPromise = null;
 
   function openDB(){
@@ -1261,6 +1311,12 @@
         }
         if(!db.objectStoreNames.contains('stickies')){
           db.createObjectStore('stickies', {keyPath:'id'});
+        }
+        if(!db.objectStoreNames.contains('categories')){
+          db.createObjectStore('categories', {keyPath:'id'});
+        }
+        if(!db.objectStoreNames.contains('limitlogs')){
+          db.createObjectStore('limitlogs', {keyPath:'id'});
         }
       };
       req.onblocked = ()=>{
@@ -1362,6 +1418,24 @@
     },
     deleteSticky(id){
       return tx('stickies','readwrite').then(t=>reqToPromise(t.objectStore('stickies').delete(id)));
+    },
+    allCategories(){
+      return tx('categories','readonly').then(t=>reqToPromise(t.objectStore('categories').getAll()));
+    },
+    putCategory(c){
+      return tx('categories','readwrite').then(t=>reqToPromise(t.objectStore('categories').put(c)));
+    },
+    deleteCategory(id){
+      return tx('categories','readwrite').then(t=>reqToPromise(t.objectStore('categories').delete(id)));
+    },
+    allLimitLogs(){
+      return tx('limitlogs','readonly').then(t=>reqToPromise(t.objectStore('limitlogs').getAll()));
+    },
+    putLimitLog(l){
+      return tx('limitlogs','readwrite').then(t=>reqToPromise(t.objectStore('limitlogs').put(l)));
+    },
+    deleteLimitLog(id){
+      return tx('limitlogs','readwrite').then(t=>reqToPromise(t.objectStore('limitlogs').delete(id)));
     }
   };
 
@@ -1531,13 +1605,16 @@
     const remoteProjectsRes = await GH.getJson(cfg, 'data/projects.json');
     const remoteFilesIndexRes = await GH.getJson(cfg, 'data/files-index.json');
     const remoteTombstonesRes = await GH.getJson(cfg, 'data/tombstones.json');
+    const remoteCategoriesRes = await GH.getJson(cfg, 'data/categories.json');
     const remoteProjects = remoteProjectsRes.data || [];
     const remoteFilesIndex = remoteFilesIndexRes.data || [];
     const remoteTombstones = remoteTombstonesRes.data || [];
+    const remoteCategories = remoteCategoriesRes.data || [];
 
     const localProjects = await DB.allProjects();
     const localFiles = await DB.allFiles();
     const localTombstones = await DB.allTombstones();
+    const localCategories = await DB.allCategories();
 
     // 2. merge tombstones (union, keep latest deletedAt per id)
     const tombMap = new Map();
@@ -1550,6 +1627,26 @@
       if(!localTombstones.find(x=>x.id===t.id)) await DB.addTombstone(t.id, t.kind);
     }
 
+    // 2b. merge categories (last-write-wins by updatedAt, respecting tombstones) — same pattern as projects
+    const catMap = new Map();
+    [...remoteCategories, ...localCategories].forEach(c=>{
+      const existing = catMap.get(c.id);
+      if(!existing || c.updatedAt > existing.updatedAt) catMap.set(c.id, c);
+    });
+    for(const t of mergedTombstones){
+      if(t.kind === 'category') catMap.delete(t.id);
+    }
+    const mergedCategories = [...catMap.values()];
+    const localCategoryIds = new Set(localCategories.map(c=>c.id));
+    for(const c of mergedCategories){
+      const local = localCategories.find(x=>x.id===c.id);
+      if(!local || c.updatedAt > local.updatedAt) await DB.putCategory(c);
+    }
+    for(const id of localCategoryIds){
+      if(!catMap.has(id)) await DB.deleteCategory(id);
+    }
+    const deletedCategoryIds = new Set(mergedTombstones.filter(t=>t.kind==='category').map(t=>t.id));
+
     // 3. merge projects (last-write-wins by updatedAt, respecting tombstones)
     const projMap = new Map();
     [...remoteProjects, ...localProjects].forEach(p=>{
@@ -1560,6 +1657,14 @@
       if(t.kind === 'project') projMap.delete(t.id);
     }
     const mergedProjects = [...projMap.values()];
+    // a project pointing at a category that no longer exists loses that reference,
+    // it never loses the project itself or any of its other data
+    for(const p of mergedProjects){
+      if(p.categoryId && deletedCategoryIds.has(p.categoryId)){
+        p.categoryId = null;
+        p.updatedAt = Date.now();
+      }
+    }
 
     // apply merged projects locally
     const localIds = new Set(localProjects.map(p=>p.id));
@@ -1602,13 +1707,15 @@
       }
     }
 
-    // 6. push merged projects / files-index / tombstones back to GitHub
+    // 6. push merged projects / files-index / tombstones / categories back to GitHub
     await GH.putJson(cfg, 'data/projects.json', mergedProjects, remoteProjectsRes.sha);
     await GH.putJson(cfg, 'data/files-index.json', mergedFileIndex, remoteFilesIndexRes.sha);
     await GH.putJson(cfg, 'data/tombstones.json', mergedTombstones, remoteTombstonesRes.sha);
+    await GH.putJson(cfg, 'data/categories.json', mergedCategories, remoteCategoriesRes.sha);
 
     // 7. refresh in-memory state + UI
     projects = await DB.allProjects();
+    categories = await DB.allCategories();
     if(isDragging){
       pendingHomeRefresh = true;
     } else {
@@ -1624,10 +1731,13 @@
 
   /* ---------------- state ---------------- */
   let projects = [];
+  let categories = []; // project categories only — storage/library/stickies are unaffected
+  let activeCategoryId = null; // null = "Tümü" (all); only meaningful when activeKind === 'project'
   let currentProjectId = null;
   let searchTerm = '';
   let saveTimer = null;
   let activeKind = 'project'; // 'project' | 'storage' — which home tab is showing
+  let limitTrackerSettings = { resetHours: 5 }; // how many hours after a logged limit it's assumed to reset
   const coverUrlCache = new Map(); // fileId -> objectURL, avoids re-creating/leaking on every render
 
   function getCoverObjectURL(fileId){
@@ -1748,29 +1858,60 @@
     const isSearching = !!term;
     const isPriorityMode = (appearanceSettings.sortMode || 'manual') === 'priority';
     const inKind = projects.filter(p => (p.kind || 'project') === activeKind);
-    const filtered = inKind
+
+    const inCategoryFolder = activeKind === 'project' && !!activeCategoryId;
+    let openCategory = inCategoryFolder ? categories.find(c=>c.id === activeCategoryId) : null;
+    if(inCategoryFolder && !openCategory){
+      // the category we were looking at is gone (deleted elsewhere/another device) — bounce back to root
+      activeCategoryId = null;
+      renderHome();
+      return;
+    }
+    const atCategoryRoot = activeKind === 'project' && !activeCategoryId;
+
+    const uncategorized = inKind.filter(p => !p.categoryId || !categories.some(c=>c.id === p.categoryId));
+    const baseProjects = inCategoryFolder
+      ? inKind.filter(p => p.categoryId === activeCategoryId)
+      : (atCategoryRoot ? uncategorized : inKind);
+
+    const folderCards = atCategoryRoot
+      ? categories.slice()
+          .filter(c => !term || c.name.toLowerCase().includes(term))
+          .sort((a,b)=>(a.order??0)-(b.order??0))
+      : [];
+
+    const filteredProjects = baseProjects
       .filter(p => !term || p.name.toLowerCase().includes(term) || (p.note||'').toLowerCase().includes(term))
       .sort((a,b)=> isPriorityMode
         ? ((b.priority ?? 0) - (a.priority ?? 0)) || ((a.order ?? 0) - (b.order ?? 0))
         : (a.order ?? 0) - (b.order ?? 0));
 
+    renderCategoryBreadcrumb(openCategory);
+
     const meta = KIND_META[activeKind];
     const isLibrary = activeKind === 'library';
     KIND_ORDER.forEach(k=> document.getElementById('tab-'+k).classList.toggle('active', k === activeKind));
     document.getElementById('sort-mode-hint').style.display = isPriorityMode ? 'flex' : 'none';
-    searchInput.placeholder = meta.searchPlaceholder;
-    document.getElementById('empty-state-icon').innerHTML = icon(meta.emptyIcon, 24);
-    document.getElementById('empty-state-title').textContent = meta.emptyTitle;
-    document.getElementById('empty-state-desc').textContent = meta.emptyDesc;
+    searchInput.placeholder = inCategoryFolder ? `${openCategory.name} içinde ara...` : meta.searchPlaceholder;
+    document.getElementById('empty-state-icon').innerHTML = icon(inCategoryFolder ? 'folder' : meta.emptyIcon, 24);
+    document.getElementById('empty-state-title').textContent = inCategoryFolder ? 'Bu kategori boş' : meta.emptyTitle;
+    document.getElementById('empty-state-desc').textContent = inCategoryFolder ? 'Bir projeyi buraya taşımak için proje kartındaki etiket ikonunu kullan.' : meta.emptyDesc;
     document.getElementById('empty-new-btn').textContent = '+ ' + meta.newLabel;
     document.getElementById('new-project-btn').querySelector('.btn-label').textContent = meta.newLabel;
 
     grid.innerHTML = '';
     grid.classList.toggle('search-active', isSearching);
-    emptyState.style.display = (inKind.length === 0) ? 'block' : 'none';
-    grid.style.display = (inKind.length === 0) ? 'none' : 'grid';
 
-    if(filtered.length === 0 && inKind.length > 0){
+    const nothingInScopeAtAll = inCategoryFolder
+      ? baseProjects.length === 0
+      : (atCategoryRoot ? (categories.length === 0 && uncategorized.length === 0) : inKind.length === 0);
+
+    emptyState.style.display = nothingInScopeAtAll ? 'block' : 'none';
+    grid.style.display = nothingInScopeAtAll ? 'none' : 'grid';
+    if(nothingInScopeAtAll) return;
+
+    const somethingToShow = folderCards.length > 0 || filteredProjects.length > 0;
+    if(!somethingToShow){
       const div = document.createElement('div');
       div.style.cssText = 'grid-column:1/-1;text-align:center;color:var(--text-faint);padding:40px 0;font-size:13px;';
       div.textContent = meta.notFoundMsg;
@@ -1778,91 +1919,155 @@
       return;
     }
 
-    filtered.forEach(p=>{
-      const card = document.createElement('div');
-      card.className = 'card' + (p.coverFileId ? ' has-cover' : '');
-      card.dataset.projectId = p.id;
-      card.style.setProperty('--tag-color', colorHex(p.color));
-      card.tabIndex = 0;
+    folderCards.forEach(c => grid.appendChild(buildCategoryFolderCard(c)));
+    if(atCategoryRoot && !isSearching) grid.appendChild(buildAddCategoryTile());
 
-      const mediaType = MEDIA_TYPES.find(m=>m.id===p.mediaType);
-      const status = LIBRARY_STATUSES.find(s=>s.id===p.status) || LIBRARY_STATUSES[0];
-      const libraryBadges = isLibrary ? `
-        <div class="card-badges">
-          ${mediaType ? `<span class="badge-chip">${escapeHtml(mediaType.label)}</span>` : ''}
-          <span class="badge-chip status-${status.id}">${escapeHtml(status.label)}</span>
-        </div>
-        ${p.rating ? `<div class="card-stars">${starRow(p.rating, 13)}</div>` : ''}
-      ` : '';
-
-      card.innerHTML = `
-        ${p.coverFileId ? '<div class="card-cover" data-cover></div>' : ''}
-        <div class="card-top">
-          <div class="card-title-row">
-            <span class="card-dot"></span>
-            <h3 class="card-title"></h3>
-          </div>
-          <div class="card-actions">
-            <button class="icon-btn move-btn" title="Başka bir bölüme taşı">${icon('move')}</button>
-            <button class="icon-btn edit-btn" title="Düzenle">${icon('edit')}</button>
-            <button class="icon-btn danger delete-btn" title="Sil">${icon('trash')}</button>
-          </div>
-        </div>
-        ${libraryBadges}
-        <p class="card-preview ${p.note ? '' : 'empty'}"></p>
-        <div class="card-meta">
-          <span class="card-meta-left">
-            ${fmtDate(p.updatedAt)}
-            ${p.priority ? `<span class="card-priority">${starRow(p.priority, 11)}</span>` : ''}
-          </span>
-          <span class="file-pill" data-filecount></span>
-        </div>
-      `;
-      card.querySelector('.card-title').textContent = p.name;
-      const preview = card.querySelector('.card-preview');
-      preview.textContent = p.note ? p.note : 'Not eklenmedi';
-
-      if(p.coverFileId){
-        getCoverObjectURL(p.coverFileId).then(url=>{
-          if(!url) return;
-          const coverEl = card.querySelector('[data-cover]');
-          if(coverEl) coverEl.style.backgroundImage = `url(${url})`;
-        });
-      }
-
-      // async file count
-      DB.filesForProject(p.id).then(files=>{
-        const realFiles = files.filter(f=>!f.isCover);
-        card.querySelector('[data-filecount]').innerHTML = realFiles.length ? `${icon('paperclip',12)}${realFiles.length}` : '';
-      });
-
-      card.addEventListener('click', (e)=>{
-        if(e.target.closest('.card-actions')) return;
-        if(card.dataset.justDragged === '1'){ card.dataset.justDragged = ''; return; }
-        openProject(p.id);
-      });
-      card.addEventListener('keydown', (e)=>{
-        if(e.key === 'Enter') openProject(p.id);
-      });
-      card.querySelector('.move-btn').addEventListener('click', (e)=>{
-        e.stopPropagation();
-        openMoveMenu(e.currentTarget, p);
-      });
-      card.querySelector('.edit-btn').addEventListener('click', (e)=>{
-        e.stopPropagation();
-        openEditModal(p);
-      });
-      card.querySelector('.delete-btn').addEventListener('click', (e)=>{
-        e.stopPropagation();
-        openDeleteConfirm(p);
-      });
-
-      if(!isSearching && !isPriorityMode){
-        attachLongPressDrag(card);
-      }
-
-      grid.appendChild(card);
+    filteredProjects.forEach(p=>{
+      grid.appendChild(buildProjectCard(p, {isSearching, isPriorityMode, isLibrary}));
     });
+  }
+
+  function buildProjectCard(p, ctx){
+    const isSearching = ctx.isSearching, isPriorityMode = ctx.isPriorityMode, isLibrary = ctx.isLibrary;
+    const card = document.createElement('div');
+    card.className = 'card' + (p.coverFileId ? ' has-cover' : '');
+    card.dataset.projectId = p.id;
+    card.style.setProperty('--tag-color', colorHex(p.color));
+    card.tabIndex = 0;
+
+    const mediaType = MEDIA_TYPES.find(m=>m.id===p.mediaType);
+    const status = LIBRARY_STATUSES.find(s=>s.id===p.status) || LIBRARY_STATUSES[0];
+    const libraryBadges = isLibrary ? `
+      <div class="card-badges">
+        ${mediaType ? `<span class="badge-chip">${escapeHtml(mediaType.label)}</span>` : ''}
+        <span class="badge-chip status-${status.id}">${escapeHtml(status.label)}</span>
+      </div>
+      ${p.rating ? `<div class="card-stars">${starRow(p.rating, 13)}</div>` : ''}
+    ` : '';
+
+    card.innerHTML = `
+      ${p.coverFileId ? '<div class="card-cover" data-cover></div>' : ''}
+      <div class="card-top">
+        <div class="card-title-row">
+          <span class="card-dot"></span>
+          <h3 class="card-title"></h3>
+        </div>
+        <div class="card-actions">
+          ${activeKind === 'project' ? `<button class="icon-btn tag-btn" title="Kategoriye taşı">${icon('tag')}</button>` : ''}
+          <button class="icon-btn move-btn" title="Başka bir bölüme taşı">${icon('move')}</button>
+          <button class="icon-btn edit-btn" title="Düzenle">${icon('edit')}</button>
+          <button class="icon-btn danger delete-btn" title="Sil">${icon('trash')}</button>
+        </div>
+      </div>
+      ${libraryBadges}
+      <p class="card-preview ${p.note ? '' : 'empty'}"></p>
+      <div class="card-meta">
+        <span class="card-meta-left">
+          ${fmtDate(p.updatedAt)}
+          ${p.priority ? `<span class="card-priority">${starRow(p.priority, 11)}</span>` : ''}
+        </span>
+        <span class="file-pill" data-filecount></span>
+      </div>
+    `;
+    card.querySelector('.card-title').textContent = p.name;
+    const preview = card.querySelector('.card-preview');
+    preview.textContent = p.note ? p.note : 'Not eklenmedi';
+
+    if(p.coverFileId){
+      getCoverObjectURL(p.coverFileId).then(url=>{
+        if(!url) return;
+        const coverEl = card.querySelector('[data-cover]');
+        if(coverEl) coverEl.style.backgroundImage = `url(${url})`;
+      });
+    }
+
+    // async file count
+    DB.filesForProject(p.id).then(files=>{
+      const realFiles = files.filter(f=>!f.isCover);
+      card.querySelector('[data-filecount]').innerHTML = realFiles.length ? `${icon('paperclip',12)}${realFiles.length}` : '';
+    });
+
+    card.addEventListener('click', (e)=>{
+      if(e.target.closest('.card-actions')) return;
+      if(card.dataset.justDragged === '1'){ card.dataset.justDragged = ''; return; }
+      openProject(p.id);
+    });
+    card.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter') openProject(p.id);
+    });
+    card.querySelector('.move-btn').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openMoveMenu(e.currentTarget, p);
+    });
+    const tagBtn = card.querySelector('.tag-btn');
+    if(tagBtn){
+      tagBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        openCategoryPickerMenu(e.currentTarget, p);
+      });
+    }
+    card.querySelector('.edit-btn').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openEditModal(p);
+    });
+    card.querySelector('.delete-btn').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openDeleteConfirm(p);
+    });
+
+    if(!isSearching && !isPriorityMode){
+      attachLongPressDrag(card);
+    }
+    return card;
+  }
+
+  function buildCategoryFolderCard(c){
+    const card = document.createElement('div');
+    card.className = 'card category-folder-card';
+    card.style.setProperty('--tag-color', c.color || '#888');
+    card.tabIndex = 0;
+    const count = projects.filter(p => (p.kind||'project') === 'project' && p.categoryId === c.id).length;
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-title-row">
+          <span class="card-dot"></span>
+          <h3 class="card-title"></h3>
+        </div>
+        <div class="card-actions">
+          <button class="icon-btn cat-edit-btn" title="Kategoriyi düzenle">${icon('edit')}</button>
+        </div>
+      </div>
+      <p class="card-preview">${count} proje</p>
+    `;
+    const titleEl = card.querySelector('.card-title');
+    titleEl.innerHTML = `${icon('folder',15)} <span></span>`;
+    titleEl.style.display = 'flex';
+    titleEl.style.alignItems = 'center';
+    titleEl.style.gap = '6px';
+    titleEl.querySelector('span').textContent = c.name;
+    card.addEventListener('click', (e)=>{
+      if(e.target.closest('.card-actions')) return;
+      activeCategoryId = c.id;
+      renderHome();
+    });
+    card.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ activeCategoryId = c.id; renderHome(); }
+    });
+    card.querySelector('.cat-edit-btn').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openCategoryModal(c);
+    });
+    return card;
+  }
+
+  function buildAddCategoryTile(){
+    const card = document.createElement('div');
+    card.className = 'card category-add-card';
+    card.tabIndex = 0;
+    card.innerHTML = `<div class="card-top" style="justify-content:center;height:100%;align-items:center;"><span class="card-title" style="opacity:.65;font-weight:600;">+ Kategori</span></div>`;
+    card.addEventListener('click', ()=> openCategoryModal(null));
+    card.addEventListener('keydown', (e)=>{ if(e.key==='Enter') openCategoryModal(null); });
+    return card;
   }
 
   function starRow(rating, size){
@@ -1937,6 +2142,176 @@
     menu.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - menu.offsetWidth - 12) + 'px';
     openMoveMenuEl = menu;
     setTimeout(()=> document.addEventListener('click', closeMoveMenu), 0);
+  }
+
+  /* ---------------- project categories (project-kind only; storage/library/stickies unaffected) ---------------- */
+  function renderCategoryBreadcrumb(openCategory){
+    const row = document.getElementById('category-row');
+    if(!row) return;
+    if(!openCategory){
+      row.style.display = 'none';
+      row.innerHTML = '';
+      return;
+    }
+    row.style.display = 'flex';
+    row.innerHTML = '';
+
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'btn btn-ghost btn-sm';
+    backBtn.innerHTML = `${icon('back',14)}<span>Projeler</span>`;
+    backBtn.style.display = 'inline-flex';
+    backBtn.style.alignItems = 'center';
+    backBtn.style.gap = '6px';
+    backBtn.addEventListener('click', ()=>{ activeCategoryId = null; renderHome(); });
+    row.appendChild(backBtn);
+
+    const sep = document.createElement('span');
+    sep.style.color = 'var(--text-faint)';
+    sep.textContent = '/';
+    row.appendChild(sep);
+
+    const nameEl = document.createElement('span');
+    nameEl.style.cssText = 'font-weight:600;display:inline-flex;align-items:center;gap:6px;';
+    nameEl.innerHTML = `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${openCategory.color||'#888'};"></span>${escapeHtml(openCategory.name)}`;
+    row.appendChild(nameEl);
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'icon-btn';
+    editBtn.title = 'Kategoriyi düzenle';
+    editBtn.innerHTML = icon('edit', 14);
+    editBtn.addEventListener('click', ()=> openCategoryModal(openCategory));
+    row.appendChild(editBtn);
+  }
+
+  function openCategoryPickerMenu(anchorBtn, p){
+    document.querySelectorAll('.move-menu').forEach(m=>m.remove());
+    const menu = document.createElement('div');
+    menu.className = 'move-menu';
+
+    const noneItem = document.createElement('button');
+    noneItem.type = 'button';
+    noneItem.className = 'move-menu-item';
+    noneItem.innerHTML = `<span>Kategorisiz</span>`;
+    noneItem.addEventListener('click', (e)=>{ e.stopPropagation(); closeThisMenu(); assignCategory(p, null); });
+    menu.appendChild(noneItem);
+
+    categories.forEach(c=>{
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'move-menu-item';
+      item.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c.color||'#888'};"></span><span>${escapeHtml(c.name)}</span>`;
+      item.addEventListener('click', (e)=>{ e.stopPropagation(); closeThisMenu(); assignCategory(p, c.id); });
+      menu.appendChild(item);
+    });
+
+    const addItem = document.createElement('button');
+    addItem.type = 'button';
+    addItem.className = 'move-menu-item';
+    addItem.innerHTML = `<span>+ Yeni kategori</span>`;
+    addItem.addEventListener('click', (e)=>{ e.stopPropagation(); closeThisMenu(); openCategoryModal(null); });
+    menu.appendChild(addItem);
+
+    document.body.appendChild(menu);
+    const rect = anchorBtn.getBoundingClientRect();
+    menu.style.top = (rect.bottom + 6 + window.scrollY) + 'px';
+    menu.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - menu.offsetWidth - 12) + 'px';
+
+    function closeThisMenu(){
+      menu.remove();
+      document.removeEventListener('click', onDocClick);
+    }
+    function onDocClick(e){
+      if(!menu.contains(e.target)) closeThisMenu();
+    }
+    setTimeout(()=> document.addEventListener('click', onDocClick), 0);
+  }
+
+  function assignCategory(p, catId){
+    p.categoryId = catId;
+    p.updatedAt = Date.now();
+    DB.putProject(p).then(()=>{
+      renderHome();
+      scheduleSync(1500);
+    });
+  }
+
+  function openCategoryModal(existing){
+    let selectedColor = existing ? (existing.color || PALETTE[0].hex) : PALETTE[Math.floor(Math.random()*PALETTE.length)].hex;
+    modalRoot.innerHTML = `
+      <div class="modal-overlay" id="overlay">
+        <div class="modal">
+          <h3>${existing ? 'Kategoriyi Düzenle' : 'Yeni Kategori'}</h3>
+          <input type="text" id="cat-name" placeholder="Kategori adı" autofocus>
+          <div class="color-row" id="cat-colors"></div>
+          <div class="modal-actions">
+            ${existing ? '<button class="btn btn-ghost" id="cat-delete" style="margin-right:auto;color:var(--danger);">Sil</button>' : ''}
+            <button class="btn btn-ghost" id="cat-cancel">Vazgeç</button>
+            <button class="btn btn-primary" id="cat-save">${existing ? 'Kaydet' : 'Oluştur'}</button>
+          </div>
+        </div>
+      </div>
+    `;
+    const nameInput = document.getElementById('cat-name');
+    nameInput.value = existing ? existing.name : '';
+    renderColorRow(document.getElementById('cat-colors'), selectedColor, (hex)=>{ selectedColor = hex; });
+
+    document.getElementById('overlay').addEventListener('click', (e)=>{
+      if(e.target.id === 'overlay') closeModal();
+    });
+    document.getElementById('cat-cancel').addEventListener('click', closeModal);
+    document.getElementById('cat-save').addEventListener('click', ()=>{
+      const name = nameInput.value.trim();
+      if(!name){ showToast('Kategori adı gir'); return; }
+      if(existing){
+        existing.name = name;
+        existing.color = selectedColor;
+        existing.updatedAt = Date.now();
+        DB.putCategory(existing).then(()=>{
+          categories = categories.map(c=> c.id === existing.id ? existing : c);
+          closeModal();
+          renderHome();
+          scheduleSync(1500);
+        });
+      } else {
+        const maxOrder = categories.length ? Math.max(...categories.map(c=>c.order??0)) : -1;
+        const c = { id: uid(), name, color: selectedColor, order: maxOrder+1, createdAt: Date.now(), updatedAt: Date.now() };
+        DB.putCategory(c).then(()=>{
+          categories.push(c);
+          closeModal();
+          renderHome();
+          scheduleSync(1500);
+        });
+      }
+    });
+    if(existing){
+      const deleteBtn = document.getElementById('cat-delete');
+      let confirming = false;
+      deleteBtn.addEventListener('click', async ()=>{
+        if(!confirming){
+          confirming = true;
+          deleteBtn.textContent = 'Emin misin? Tekrar tıkla';
+          setTimeout(()=>{ confirming = false; if(deleteBtn.isConnected) deleteBtn.textContent = 'Sil'; }, 3000);
+          return;
+        }
+        await DB.deleteCategory(existing.id);
+        await DB.addTombstone(existing.id, 'category');
+        categories = categories.filter(c=>c.id !== existing.id);
+        // projects that referenced this category simply lose the tag — nothing else about them changes
+        const affected = projects.filter(p=>p.categoryId === existing.id);
+        for(const p of affected){
+          p.categoryId = null;
+          p.updatedAt = Date.now();
+          await DB.putProject(p);
+        }
+        if(activeCategoryId === existing.id) activeCategoryId = null;
+        closeModal();
+        renderHome();
+        scheduleSync(1500);
+      });
+    }
+    setTimeout(()=>nameInput.focus(), 30);
   }
 
   /* ---------------- drag-to-reorder: long-press to pick up, others make way (FLIP) ---------------- */
@@ -2557,6 +2932,196 @@
   });
 
   renderStickies();
+
+  /* ---------------- limit tracker (Claude usage log — local-only, not synced to GitHub) ---------------- */
+  function fmtLimitLogTime(ts){
+    const d = new Date(ts);
+    const pad = n => String(n).padStart(2,'0');
+    const today = new Date();
+    const isToday = d.toDateString() === today.toDateString();
+    const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    if(isToday) return timeStr;
+    return `${pad(d.getDate())}.${pad(d.getMonth()+1)} ${timeStr}`;
+  }
+
+  // Always-visible bar (independent of the modal) so limit status is a glance, not a click away.
+  function renderLimitStatusBar(){
+    const bar = document.getElementById('limit-status-bar');
+    if(!bar) return;
+    DB.allLimitLogs().then(logs=>{
+      const resetMs = (limitTrackerSettings.resetHours || 5) * 60 * 60 * 1000;
+      const now = Date.now();
+      // latest entry per account
+      const latestByAccount = new Map();
+      logs.forEach(l=>{
+        const key = l.account && l.account.trim() ? l.account.trim() : null;
+        if(!key) return;
+        const existing = latestByAccount.get(key);
+        if(!existing || l.atTime > existing.atTime) latestByAccount.set(key, l);
+      });
+      const active = [...latestByAccount.entries()]
+        .map(([account, l])=> ({ account, resetAt: l.atTime + resetMs, project: l.projectName }))
+        .filter(x=> x.resetAt > now)
+        .sort((a,b)=> a.resetAt - b.resetAt);
+
+      if(active.length === 0){
+        bar.style.display = 'none';
+        bar.innerHTML = '';
+        return;
+      }
+      bar.style.display = 'flex';
+      bar.innerHTML = '';
+      active.forEach(x=>{
+        const remainingMin = Math.round((x.resetAt - now) / 60000);
+        const soon = remainingMin <= 20;
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'limit-status-chip' + (soon ? ' lsc-soon' : '');
+        const resetTimeStr = fmtLimitLogTime(x.resetAt);
+        chip.title = x.project ? `Son kayıt: ${x.project}` : '';
+        chip.innerHTML = `<span class="lsc-dot"></span><strong>${escapeHtml(x.account)}</strong> · ${resetTimeStr}'de açılır`;
+        chip.addEventListener('click', openLimitTrackerModal);
+        bar.appendChild(chip);
+      });
+    });
+  }
+
+  function renderLimitList(){
+    const listEl = document.getElementById('lt-list');
+    if(!listEl) return;
+    DB.allLimitLogs().then(logs=>{
+      logs.sort((a,b)=> b.atTime - a.atTime);
+      listEl.innerHTML = '';
+      if(logs.length === 0){
+        const empty = document.createElement('div');
+        empty.style.cssText = 'text-align:center;color:var(--text-faint);font-size:13px;padding:16px 0;';
+        empty.textContent = 'Henüz kayıt yok';
+        listEl.appendChild(empty);
+        return;
+      }
+      const resetMs = (limitTrackerSettings.resetHours || 5) * 60 * 60 * 1000;
+      logs.forEach(l=>{
+        const resetAt = l.atTime + resetMs;
+        const stillActive = resetAt > Date.now();
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;';
+        row.innerHTML = `
+          <span style="font-variant-numeric:tabular-nums;color:var(--text-dim);min-width:74px;">${escapeHtml(fmtLimitLogTime(l.atTime))}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <strong>${escapeHtml(l.projectName || '—')}</strong>${l.account ? ' · ' + escapeHtml(l.account) : ''}
+            ${stillActive ? `<span style="color:var(--text-faint);"> — ${fmtLimitLogTime(resetAt)}'de açılır</span>` : ''}
+          </span>
+          <button class="icon-btn danger lt-del-btn" title="Sil" style="width:24px;height:24px;flex-shrink:0;">${icon('x',13)}</button>
+        `;
+        row.querySelector('.lt-del-btn').addEventListener('click', ()=>{
+          DB.deleteLimitLog(l.id).then(()=>{ renderLimitList(); renderLimitStatusBar(); });
+        });
+        listEl.appendChild(row);
+      });
+    });
+  }
+
+  function openLimitTrackerModal(){
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const defaultTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    modalRoot.innerHTML = `
+      <div class="modal-overlay" id="overlay">
+        <div class="modal modal-wide">
+          <h3>Limit Takibi</h3>
+          <p style="margin-top:-8px;">Sadece bu cihazda saklanır, GitHub'a senkron edilmez.</p>
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <input type="time" id="lt-time" value="${defaultTime}" style="flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:var(--radius);font-size:14px;">
+            <button class="btn btn-ghost btn-sm" id="lt-now" type="button">Şimdi</button>
+          </div>
+          <input type="text" id="lt-project" placeholder="Hangi proje" list="lt-project-list" autocomplete="off">
+          <datalist id="lt-project-list"></datalist>
+          <input type="text" id="lt-account" placeholder="Hangi hesap" list="lt-account-list" autocomplete="off">
+          <datalist id="lt-account-list"></datalist>
+          <div class="modal-actions" style="justify-content:flex-start;margin-bottom:6px;">
+            <button class="btn btn-primary" id="lt-add" type="button">Ekle</button>
+          </div>
+          <label class="field-label" style="display:flex;align-items:center;gap:8px;font-weight:400;">
+            Limit kaç saatte açılıyor?
+            <input type="number" id="lt-reset-hours" min="1" max="24" step="0.5" value="${limitTrackerSettings.resetHours}" style="width:64px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:var(--radius);font-size:13px;">
+            saat
+          </label>
+          <div style="margin:14px 0 8px;font-size:12px;color:var(--text-faint);">Üstteki durum çubuğunda, henüz süresi dolmamış son kayıtlar hesap bazında gösterilir.</div>
+          <div id="lt-list" style="max-height:280px;overflow:auto;display:flex;flex-direction:column;gap:6px;"></div>
+          <div class="modal-actions">
+            <button class="btn btn-ghost" id="lt-close" type="button">Kapat</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // suggestions: previous project/account entries + this app's own project names
+    DB.allLimitLogs().then(logs=>{
+      const projectNames = new Set(projects.map(p=>p.name));
+      logs.forEach(l=>{ if(l.projectName) projectNames.add(l.projectName); });
+      const projectListEl = document.getElementById('lt-project-list');
+      projectListEl.innerHTML = [...projectNames].map(n=>`<option value="${escapeHtml(n)}">`).join('');
+
+      const accountNames = new Set();
+      logs.forEach(l=>{ if(l.account) accountNames.add(l.account); });
+      const accountListEl = document.getElementById('lt-account-list');
+      accountListEl.innerHTML = [...accountNames].map(n=>`<option value="${escapeHtml(n)}">`).join('');
+    });
+
+    document.getElementById('overlay').addEventListener('click', (e)=>{
+      if(e.target.id === 'overlay') closeModal();
+    });
+    document.getElementById('lt-close').addEventListener('click', closeModal);
+    document.getElementById('lt-now').addEventListener('click', ()=>{
+      const n = new Date();
+      document.getElementById('lt-time').value = `${pad(n.getHours())}:${pad(n.getMinutes())}`;
+    });
+    document.getElementById('lt-reset-hours').addEventListener('change', (e)=>{
+      const hrs = parseFloat(e.target.value);
+      if(!hrs || hrs <= 0) return;
+      limitTrackerSettings.resetHours = hrs;
+      DB.putSetting({ key:'limitTracker', resetHours: hrs }).then(()=>{
+        renderLimitList();
+        renderLimitStatusBar();
+      });
+    });
+    document.getElementById('lt-add').addEventListener('click', ()=>{
+      const timeVal = document.getElementById('lt-time').value;
+      const projectVal = document.getElementById('lt-project').value.trim();
+      const accountVal = document.getElementById('lt-account').value.trim();
+      if(!timeVal){ showToast('Saat seç'); return; }
+      const [hh, mm] = timeVal.split(':').map(Number);
+      const n = new Date();
+      const atTime = new Date(n.getFullYear(), n.getMonth(), n.getDate(), hh, mm, 0, 0).getTime();
+      const entry = {
+        id: uid(),
+        atTime,
+        projectName: projectVal,
+        account: accountVal,
+        createdAt: Date.now()
+      };
+      DB.putLimitLog(entry).then(()=>{
+        document.getElementById('lt-project').value = '';
+        document.getElementById('lt-account').value = '';
+        const nn = new Date();
+        document.getElementById('lt-time').value = `${pad(nn.getHours())}:${pad(nn.getMinutes())}`;
+        renderLimitList();
+        renderLimitStatusBar();
+        document.getElementById('lt-project').focus();
+      });
+    });
+
+    renderLimitList();
+    setTimeout(()=>document.getElementById('lt-project').focus(), 30);
+  }
+
+  document.getElementById('limit-btn').addEventListener('click', openLimitTrackerModal);
+  DB.getSetting('limitTracker').then(setting=>{
+    if(setting && setting.resetHours) limitTrackerSettings.resetHours = setting.resetHours;
+    renderLimitStatusBar();
+  });
+  setInterval(renderLimitStatusBar, 60000);
 
   /* ---------------- AI chat (Gemini, local-only key, not synced to GitHub) ---------------- */
   let aiSettings = {provider:'gemini', apiKey:'', model:'gemini-3.5-flash'};
@@ -3611,6 +4176,9 @@
         p.status = 'todo';
         p.rating = 0;
       }
+      if(activeKind === 'project' && activeCategoryId){
+        p.categoryId = activeCategoryId;
+      }
       DB.putProject(p).then(()=>{
         projects.push(p);
         closeModal();
@@ -4351,7 +4919,7 @@
   }
 
   document.getElementById('export-btn').addEventListener('click', ()=>{
-    Promise.all([DB.allProjects(), DB.allFiles()]).then(async ([allProjects, allFiles])=>{
+    Promise.all([DB.allProjects(), DB.allFiles(), DB.allCategories(), DB.allLimitLogs()]).then(async ([allProjects, allFiles, allCategories, allLimitLogs])=>{
       const filesOut = [];
       for(const f of allFiles){
         const b64 = await blobToBase64(f.blob);
@@ -4361,7 +4929,9 @@
         app: 'defter',
         exportedAt: Date.now(),
         projects: allProjects,
-        files: filesOut
+        files: filesOut,
+        categories: allCategories,
+        limitlogs: allLimitLogs
       };
       const blob = new Blob([JSON.stringify(payload)], {type:'application/json'});
       const url = URL.createObjectURL(blob);
@@ -4388,11 +4958,19 @@
       try{
         const payload = JSON.parse(reader.result);
         if(!payload.projects) throw new Error('bad format');
+        // categories first, so projects below can remap their categoryId
+        const categoryIdMap = {};
+        for(const c of (payload.categories||[])){
+          const newId = uid();
+          categoryIdMap[c.id] = newId;
+          await DB.putCategory({...c, id:newId});
+        }
         const idMap = {};
         for(const p of payload.projects){
           const newId = uid();
           idMap[p.id] = newId;
-          await DB.putProject({...p, id:newId});
+          const newCategoryId = p.categoryId ? (categoryIdMap[p.categoryId] || null) : null;
+          await DB.putProject({...p, id:newId, categoryId:newCategoryId});
         }
         for(const f of (payload.files||[])){
           const blob = await base64ToBlob(f.data);
@@ -4402,6 +4980,9 @@
             name: f.name, type: f.type, size: f.size, addedAt: f.addedAt,
             blob
           });
+        }
+        for(const l of (payload.limitlogs||[])){
+          await DB.putLimitLog({...l, id:uid()});
         }
         await loadAll();
         showToast('İçe aktarma tamamlandı');
@@ -4421,6 +5002,7 @@
     const tab = e.target.closest('.section-tab');
     if(!tab) return;
     activeKind = tab.dataset.kind;
+    activeCategoryId = null;
     searchTerm = '';
     searchInput.value = '';
     renderHome();
@@ -4449,8 +5031,9 @@
 
   /* ---------------- init ---------------- */
   function loadAll(){
-    return DB.allProjects().then(list=>{
+    return Promise.all([DB.allProjects(), DB.allCategories()]).then(([list, cats])=>{
       projects = list;
+      categories = cats;
       const missingKind = projects.filter(p=> !p.kind);
       if(missingKind.length){
         missingKind.forEach(p=>{ p.kind = 'project'; });
